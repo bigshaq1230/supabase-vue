@@ -3,14 +3,6 @@
 </script>
 
 <template>
-  <form>
-    <label for="email">Email: </label><input type="email" name="" id="email">
-    <button @click="">Sign In</button>
-  </form>
+  <span>home!</span>
 
 </template>
-<style>
-  form * {
-    margin: 1%
-  }
-</style>
