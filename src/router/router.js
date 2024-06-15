@@ -4,8 +4,8 @@ import Auth from '../views/Auth.vue'
 import Todo from '../views/Todo.vue'
 
 const routes = [
-  { path: '/', component: Todo },
-  { path: '/login', component: Auth },
+  { path: '/', component: Todo,props:true },
+  { path: '/login', component: Auth,props:true },
 ]
 
 const router = createRouter({
