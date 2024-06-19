@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { supabase } from './supabase';
 
 const session = ref(null);
@@ -23,7 +23,6 @@ const logout = async () => {
   await supabase.auth.signOut();
   session.value = null;
 };
-
 const initializeAuth = async () => {
   const { data, error } = await supabase.auth.getUser();
 
@@ -39,7 +38,7 @@ const initializeAuth = async () => {
   });
 };
 
-initializeAuth();
+onMounted( () => initializeAuth() )
 
 const logSession = () => {
   console.log(session.value);
