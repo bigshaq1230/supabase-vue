@@ -9,13 +9,26 @@
 
     <br>
     <RouterView :session="session"></RouterView>
-    <button @click="logSession">a</button>
   </div>
 </template>
 
 <script setup>
+
+import { googleOneTap } from "vue3-google-login"
 import { onMounted, ref } from 'vue';
 import { supabase } from './supabase';
+
+async function handleSignInWithGoogle(response) {
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'google',
+    token: response.credential,
+  })
+  if (error) {
+    console.error(error.message)
+  }
+  console.log(data.user.id)
+}
+
 
 const session = ref(null);
 
@@ -23,7 +36,10 @@ const logout = async () => {
   await supabase.auth.signOut();
   session.value = null;
 };
+
+
 const initializeAuth = async () => {
+
   const { data, error } = await supabase.auth.getUser();
 
   if (error) {
@@ -38,9 +54,18 @@ const initializeAuth = async () => {
   });
 };
 
-onMounted( () => initializeAuth() )
+onMounted( () => {
+  initializeAuth()
+  if (!session.value) {
+    googleOneTap()
+    .then((response) => {
+      handleSignInWithGoogle(response)
+    })
+    .catch((error) => {
+      console.log("Handle the error", error)
+    })
+  }
+})
 
-const logSession = () => {
-  console.log(session.value);
-};
+
 </script>
