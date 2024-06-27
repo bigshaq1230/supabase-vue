@@ -4,7 +4,6 @@ import { supabase } from '@/supabase';
 
 const callback = (response) => {
   handleSignInWithGoogle(response)
-  console.log("Handle the response", response)
 }
 async function handleSignInWithGoogle(response) {
   const { data, error } = await supabase.auth.signInWithIdToken({
