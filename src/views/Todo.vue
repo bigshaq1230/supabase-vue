@@ -13,7 +13,7 @@ removed.value = JSON.parse(localStorage.getItem('removed')) || []
 
 changed.value = JSON.parse(localStorage.getItem('state')) || false
 
-watch(session, async() => {
+watch(session.value, async() => {
   if (session.value) {
       await pushEdits()
       getList()
@@ -39,7 +39,7 @@ async function pushEdits() {
       for (i=0;i<list.value.length;i++) {
         list.value[i].user_id = id
       }
-      console.log(list.value)
+      console.log("list when pushing",list.value)
       const { data, error: addError } = await supabase.from('todos').upsert(...list.value)
       if (addError) {
         console.log("Error adding tasks:", addError)
@@ -91,7 +91,7 @@ async function add() {
     const { data, error: addError } = await supabase.from('todos').upsert(newTask).select()
     list.value[(list.value.length) - 1] = data[0]
   }
-  else changed.value = true
+  else {changed.value = true}
   console.log("the new task",newTask)
   input.value = ""
 }
