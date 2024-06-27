@@ -10,13 +10,14 @@ let removed = ref([])
 
 // questinable solution but it is what it is
 // 🤓🤓🤓🤓🤓🤓🤓🤓🤓🤓🤓
-watch(session, () => {
+watch(session, async() => {
   if (session.value) {
-    getList()
     if (added.value.length !== 0 || removed.value.length !== 0) {
-      pushEdits()
+      console.log("user logged in")
+      await pushEdits()
       getList()
     }
+    else getList()
   }
   else {
     console.log("here")
@@ -35,7 +36,10 @@ let input = ref("")
 
 
 async function pushEdits() {
+
   console.log("pushing")
+  console.log(added.value)
+  console.log(removed.value)
   try {
     if (added.value.length > 0) {
       const { data, error: addError } = await supabase.from('todos').upsert(...added.value)
@@ -119,6 +123,7 @@ async function edit(index) {
     }
   }
   else {
+    
     added.value.push(list.value[index])
   }
 }
