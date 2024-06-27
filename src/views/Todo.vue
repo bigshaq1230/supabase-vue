@@ -7,52 +7,60 @@ const { session } = toRefs(props)
 let list = ref([])
 let removed = ref([])
 let changed = ref(false)
-
-list.value = JSON.parse(localStorage.getItem('list')) || []
-removed.value = JSON.parse(localStorage.getItem('removed')) || []
-
-changed.value = JSON.parse(localStorage.getItem('state')) || false
-
-watch(session.value, async() => {
-  if (session.value) {
-      await pushEdits()
-      getList()
-    }
-  else {
-    console.log("user not logged in")
-  }
-}, { deep: true })
-
-watch([list, removed,changed], () => {
-  updateLocalStorage()
-}, { deep: true })
 let input = ref("")
 
+list.value = JSON.parse(localStorage.getItem('list')) || []
 
+async function onlogin() {
+  console.log("onlogin function called")
+  if (session.value) {
+    console.log("User logged in")
+    await pushEdits()
+    await getList()
+  } else {
+    console.log("User not logged in")
+    removed.value = JSON.parse(localStorage.getItem('removed')) || []
+    changed.value = JSON.parse(localStorage.getItem('changed')) || false
+  }
+}
 
+onMounted(() => {
+  console.log("Component mounted, calling onlogin")
+  onlogin()
+})
+
+watch(session, async (newValue, oldValue) => {
+  console.log("Session changed", newValue)
+  await onlogin()
+}, { deep: true })
+
+watch([list, removed, changed], () => {
+  updateLocalStorage()
+}, { deep: true })
 
 async function pushEdits() {
   try {
+    console.log("pushEdits - changed:", changed.value)
     if (changed.value) {
       const { user } = session.value
-      let id = user.id
-      for (i=0;i<list.value.length;i++) {
-        list.value[i].user_id = id
-      }
-      console.log("list when pushing",list.value)
-      const { data, error: addError } = await supabase.from('todos').upsert(...list.value)
+      const userId = user.id
+      list.value.forEach(task => task.user_id = userId)
+      console.log("list when pushing", list.value)
+      const { error: addError } = await supabase.from('todos').upsert(list.value)
       if (addError) {
         console.log("Error adding tasks:", addError)
+      } else {
+        changed.value = false
       }
-      else changed.value = false
     }
 
     if (removed.value.length > 0) {
-      const { error: removeError } = await supabase.from('todos').delete().in('id', ...removed.value)
+      const { error: removeError } = await supabase.from('todos').delete().in('id', removed.value)
       if (removeError) {
         console.log("Error removing tasks:", removeError)
+      } else {
+        removed.value = []
       }
-      else removed.value = []
     }
 
   } catch (error) {
@@ -87,12 +95,19 @@ async function add() {
 
   if (session.value) {
     const { user } = session.value
-    newTask.user_id =  user.id
+    newTask.user_id = user.id
     const { data, error: addError } = await supabase.from('todos').upsert(newTask).select()
-    list.value[(list.value.length) - 1] = data[0]
+    if (data) {
+      list.value[(list.value.length) - 1] = data[0]
+    }
+    if (addError) {
+      console.log("Error adding task:", addError)
+    }
+  } else {
+    changed.value = true
+    console.log("add function - changed set to true")
   }
-  else {changed.value = true}
-  console.log("the new task",newTask)
+  console.log("the new task", newTask)
   input.value = ""
 }
 
@@ -101,30 +116,33 @@ async function remove(index) {
   if (session.value) {
     const { error: removeError } = await supabase.from('todos').delete().eq('id', task.id)
     if (removeError) {
-      console.log("Error removing tasks:", removeError)
+      console.log("Error removing task:", removeError)
     }
-  }
-  else {
+  } else {
     removed.value.push(task.id)
+    changed.value = true
+    console.log("remove function - changed set to true")
   }
 }
+
 async function edit(index) {
-
   list.value[index].is_complete = !list.value[index].is_complete
-
   if (session.value) {
-    const { data, error: addError } = await supabase.from('todos').upsert(list.value[index])
-    if (addError) {
-      console.log("Error adding tasks:", addError)
+    const { error: editError } = await supabase.from('todos').upsert(list.value[index])
+    if (editError) {
+      console.log("Error editing task:", editError)
     }
+  } else {
+    changed.value = true
+    console.log("edit function - changed set to true")
   }
-  else changed.value = true
 }
 
 function updateLocalStorage() {
   console.log("updating local storage")
   localStorage.setItem('list', JSON.stringify(list.value))
   localStorage.setItem('removed', JSON.stringify(removed.value))
+  localStorage.setItem('changed', JSON.stringify(changed.value))
 }
 
 </script>
@@ -147,6 +165,6 @@ function updateLocalStorage() {
 }
 
 .isDone {
-  text-decoration: line-through
+  text-decoration: line-through;
 }
 </style>
