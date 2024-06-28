@@ -32,7 +32,7 @@ async function handleSignInWithGoogle(response) {
 
 const session = ref(null);
 
-const logout = async () => {
+async function logout ()  {
   await supabase.auth.signOut();
   session.value = null;
 };
@@ -56,7 +56,8 @@ const initializeAuth = async () => {
 
 onMounted( () => {
   initializeAuth()
-  if (!session.value) {
+  if (!session) {
+    console.log("no session")
     googleOneTap()
     .then((response) => {
       handleSignInWithGoogle(response)
