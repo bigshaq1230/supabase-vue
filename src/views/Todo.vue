@@ -4,11 +4,14 @@ import { onMounted, ref, toRefs, watch } from 'vue'
 
 const props = defineProps(['session'])
 const { session } = toRefs(props)
-let list = ref([])
-let removed = ref([])
+let list = ref(JSON.parse(localStorage.getItem('list')) || [])
+let removed = ref(JSON.parse(localStorage.getItem('removed')) || [])
 let input = ref("")
 
-list.value = JSON.parse(localStorage.getItem('list')) || []
+
+watch([list, removed], () => {
+  updateLocalStorage()
+}, { deep: true })
 
 async function onlogin() {
   console.log("onlogin function called")
@@ -18,7 +21,7 @@ async function onlogin() {
     await getList()
   } else {
     console.log("User not logged in")
-    removed.value = JSON.parse(localStorage.getItem('removed')) || []
+
   }
 }
 
@@ -32,10 +35,6 @@ watch(session, async (newValue, oldValue) => {
   await onlogin()
 }, { deep: true })
 
-watch([list, removed], () => {
-  updateLocalStorage()
-}, { deep: true })
-
 async function pushEdits() {
   try {
       const { user } = session.value
@@ -46,7 +45,9 @@ async function pushEdits() {
       if (addError) {
         console.log("Error adding tasks:", addError)
       }
+      console.log("removed",removed.value)
     if (removed.value.length > 0) {
+      console.log("about to remove")
       const { error: removeError } = await supabase.from('todos').delete().in('id', removed.value)
       if (removeError) {
         console.log("Error removing tasks:", removeError)
@@ -109,6 +110,7 @@ async function remove(index) {
     }
   } else {
     removed.value.push(task.id)
+    console.log(removed.value)
   }
 }
 
