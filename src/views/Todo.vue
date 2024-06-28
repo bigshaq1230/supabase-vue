@@ -6,7 +6,6 @@ const props = defineProps(['session'])
 const { session } = toRefs(props)
 let list = ref([])
 let removed = ref([])
-let changed = ref(false)
 let input = ref("")
 
 list.value = JSON.parse(localStorage.getItem('list')) || []
@@ -20,7 +19,6 @@ async function onlogin() {
   } else {
     console.log("User not logged in")
     removed.value = JSON.parse(localStorage.getItem('removed')) || []
-    changed.value = JSON.parse(localStorage.getItem('changed')) || false
   }
 }
 
@@ -34,14 +32,12 @@ watch(session, async (newValue, oldValue) => {
   await onlogin()
 }, { deep: true })
 
-watch([list, removed, changed], () => {
+watch([list, removed], () => {
   updateLocalStorage()
 }, { deep: true })
 
 async function pushEdits() {
   try {
-    console.log("pushEdits - changed:", changed.value)
-    if (changed.value) {
       const { user } = session.value
       const userId = user.id
       list.value.forEach(task => task.user_id = userId)
@@ -49,11 +45,7 @@ async function pushEdits() {
       const { error: addError } = await supabase.from('todos').upsert(list.value)
       if (addError) {
         console.log("Error adding tasks:", addError)
-      } else {
-        changed.value = false
       }
-    }
-
     if (removed.value.length > 0) {
       const { error: removeError } = await supabase.from('todos').delete().in('id', removed.value)
       if (removeError) {
@@ -103,9 +95,6 @@ async function add() {
     if (addError) {
       console.log("Error adding task:", addError)
     }
-  } else {
-    changed.value = true
-    console.log("add function - changed set to true")
   }
   console.log("the new task", newTask)
   input.value = ""
@@ -120,8 +109,6 @@ async function remove(index) {
     }
   } else {
     removed.value.push(task.id)
-    changed.value = true
-    console.log("remove function - changed set to true")
   }
 }
 
@@ -132,9 +119,6 @@ async function edit(index) {
     if (editError) {
       console.log("Error editing task:", editError)
     }
-  } else {
-    changed.value = true
-    console.log("edit function - changed set to true")
   }
 }
 
@@ -142,7 +126,6 @@ function updateLocalStorage() {
   console.log("updating local storage")
   localStorage.setItem('list', JSON.stringify(list.value))
   localStorage.setItem('removed', JSON.stringify(removed.value))
-  localStorage.setItem('changed', JSON.stringify(changed.value))
 }
 
 </script>
